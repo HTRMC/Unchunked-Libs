@@ -1,0 +1,219 @@
+name: Build Dependencies
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  build-headers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Zig version
+        run: echo "ZIG_VERSION=$(cat .zigversion)" >> $GITHUB_ENV
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Build headers
+        run: zig build headers
+
+      - name: Package headers
+        run: |
+          cd zig-out
+          tar -czvf ../unchunked_deps_headers.tar.gz include/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: headers
+          path: unchunked_deps_headers.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Zig version
+        run: echo "ZIG_VERSION=$(Get-Content .zigversion)" >> $env:GITHUB_ENV
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-cmake
+            mingw-w64-clang-x86_64-ninja
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            git
+            python3
+
+      - name: Clone and build shaderc
+        shell: msys2 {0}
+        run: |
+          git clone https://github.com/google/shaderc.git shaderc-src
+          cd shaderc-src
+          ./utils/git-sync-deps
+          mkdir build && cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_C_COMPILER=clang \
+                -DCMAKE_CXX_COMPILER=clang++ \
+                -DSHADERC_SKIP_TESTS=ON \
+                -DSHADERC_SKIP_EXAMPLES=ON \
+                -DSPIRV_SKIP_TESTS=ON \
+                ..
+          ninja shaderc_combined
+          mkdir -p ../../shaderc/lib/x86_64-windows-gnu
+          cp libshaderc/libshaderc_combined.a ../../shaderc/lib/x86_64-windows-gnu/
+
+      - name: Build x86_64-windows
+        run: zig build -Dtarget=x86_64-windows-gnu
+
+      - name: List output
+        shell: bash
+        run: find zig-out -type f
+
+      - name: Package
+        shell: bash
+        run: |
+          cd zig-out/lib
+          tar -czvf ../../unchunked_deps_x86_64-windows-gnu.tar.gz unchunked_deps_x86_64-windows-gnu/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-windows-gnu
+          path: unchunked_deps_x86_64-windows-gnu.tar.gz
+
+  build-linux-x86_64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Zig version
+        run: echo "ZIG_VERSION=$(cat .zigversion)" >> $GITHUB_ENV
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            clang libc++-dev libc++abi-dev cmake ninja-build python3
+
+      - name: Clone and build shaderc
+        run: |
+          git clone https://github.com/google/shaderc.git shaderc-src
+          cd shaderc-src
+          ./utils/git-sync-deps
+          mkdir build && cd build
+          cmake -GNinja \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSHADERC_SKIP_TESTS=ON \
+            -DSHADERC_SKIP_EXAMPLES=ON \
+            -DSHADERC_SKIP_COPYRIGHT_CHECK=ON \
+            -DSPIRV_SKIP_TESTS=ON \
+            -DSPIRV_WERROR=OFF \
+            ..
+          ninja
+          mkdir -p ../../shaderc/lib/x86_64-linux-gnu
+          cp libshaderc/libshaderc_combined.a ../../shaderc/lib/x86_64-linux-gnu/
+
+      - name: Build x86_64-linux-gnu
+        run: zig build -Dtarget=x86_64-linux-gnu
+
+      - name: Package
+        run: |
+          cd zig-out/lib
+          tar -czvf ../../unchunked_deps_x86_64-linux-gnu.tar.gz unchunked_deps_x86_64-linux-gnu/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-linux-gnu
+          path: unchunked_deps_x86_64-linux-gnu.tar.gz
+
+  build-linux-aarch64:
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Zig version
+        run: echo "ZIG_VERSION=$(cat .zigversion)" >> $GITHUB_ENV
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            clang libc++-dev libc++abi-dev cmake ninja-build python3
+
+      - name: Clone and build shaderc
+        run: |
+          git clone https://github.com/google/shaderc.git shaderc-src
+          cd shaderc-src
+          ./utils/git-sync-deps
+          mkdir build && cd build
+          cmake -GNinja \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSHADERC_SKIP_TESTS=ON \
+            -DSHADERC_SKIP_EXAMPLES=ON \
+            -DSHADERC_SKIP_COPYRIGHT_CHECK=ON \
+            -DSPIRV_SKIP_TESTS=ON \
+            -DSPIRV_WERROR=OFF \
+            ..
+          ninja
+          mkdir -p ../../shaderc/lib/aarch64-linux-gnu
+          cp libshaderc/libshaderc_combined.a ../../shaderc/lib/aarch64-linux-gnu/
+
+      - name: Build aarch64-linux-gnu
+        run: zig build -Dtarget=aarch64-linux-gnu
+
+      - name: Package
+        run: |
+          cd zig-out/lib
+          tar -czvf ../../unchunked_deps_aarch64-linux-gnu.tar.gz unchunked_deps_aarch64-linux-gnu/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aarch64-linux-gnu
+          path: unchunked_deps_aarch64-linux-gnu.tar.gz
+
+  release:
+    needs: [build-headers, build-windows, build-linux-x86_64, build-linux-aarch64]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*.tar.gz

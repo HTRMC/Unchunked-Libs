@@ -1,0 +1,24 @@
+.{
+    .name = .UnchunkedLibs,
+    .version = "0.0.1",
+    .fingerprint = 0x1bd894aa5b42e798,
+    .paths = .{""},
+    .dependencies = .{
+        .glfw = .{
+            .url = "https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz",
+            .hash = "N-V-__8AAL40TADEbrysYHBl-UIZO4KiG4chP8pLDVDINGH4",
+        },
+        .volk = .{
+            .url = "https://github.com/zeux/volk/archive/refs/tags/1.4.304.tar.gz",
+            .hash = "N-V-__8AAM6ZBgBIXgvAA8c_vDecqpmN19205AyaaSjzENaf",
+        },
+        .vulkan_headers = .{
+            .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.335.tar.gz",
+            .hash = "N-V-__8AADIiFAJfrWhQBPEi9LPInaZNnXV15Ca887-ty4M1",
+        },
+        .stb = .{
+            .url = "https://github.com/nothings/stb/archive/refs/heads/master.tar.gz",
+            .hash = "N-V-__8AAPJATgCDVnVLyHIuHLpvPr9u29Rm3gD-vmgQBkP-",
+        },
+    },
+}
