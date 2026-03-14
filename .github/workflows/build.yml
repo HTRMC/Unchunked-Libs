@@ -10,7 +10,7 @@ jobs:
   build-headers:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Read Zig version
         run: echo "ZIG_VERSION=$(cat .zigversion)" >> $GITHUB_ENV
@@ -27,7 +27,7 @@ jobs:
           cd zig-out
           tar -czvf ../unchunked_deps_headers.tar.gz include/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: headers
           path: unchunked_deps_headers.tar.gz
@@ -35,7 +35,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Read Zig version
         run: echo "ZIG_VERSION=$(Get-Content .zigversion)" >> $env:GITHUB_ENV
@@ -90,7 +90,7 @@ jobs:
           cd zig-out/lib
           tar -czvf ../../unchunked_deps_x86_64-windows-gnu.tar.gz unchunked_deps_x86_64-windows-gnu/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: x86_64-windows-gnu
           path: unchunked_deps_x86_64-windows-gnu.tar.gz
@@ -98,7 +98,7 @@ jobs:
   build-linux-x86_64:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Read Zig version
         run: echo "ZIG_VERSION=$(cat .zigversion)" >> $GITHUB_ENV
@@ -143,7 +143,7 @@ jobs:
           cd zig-out/lib
           tar -czvf ../../unchunked_deps_x86_64-linux-gnu.tar.gz unchunked_deps_x86_64-linux-gnu/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: x86_64-linux-gnu
           path: unchunked_deps_x86_64-linux-gnu.tar.gz
@@ -151,7 +151,7 @@ jobs:
   build-linux-aarch64:
     runs-on: ubuntu-22.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Read Zig version
         run: echo "ZIG_VERSION=$(cat .zigversion)" >> $GITHUB_ENV
@@ -196,7 +196,7 @@ jobs:
           cd zig-out/lib
           tar -czvf ../../unchunked_deps_aarch64-linux-gnu.tar.gz unchunked_deps_aarch64-linux-gnu/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: aarch64-linux-gnu
           path: unchunked_deps_aarch64-linux-gnu.tar.gz
@@ -208,12 +208,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*.tar.gz
